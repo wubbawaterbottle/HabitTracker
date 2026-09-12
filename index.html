@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<!-- Add to Home Screen on iPhone: opens full-screen, no Safari chrome -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daylog">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<title>Daylog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   DAYLOG — iOS system palette, light and dark
+   ═══════════════════════════════════════════════════════════ */
+:root{
+  --bg:#F2F2F7; --card:#FFFFFF; --card2:#F2F2F7;
+  --label:#000; --sec:rgba(60,60,67,.6); --ter:rgba(60,60,67,.3); --sep:rgba(60,60,67,.18);
+  --fill:rgba(120,120,128,.12); --fill2:rgba(120,120,128,.2);
+  --blue:#007AFF; --sleep:#5856D6; --meds:#34C759; --food:#FF9500; --distract:#FF3B30; --screen:#AF52DE;
+  --good:#34C759; --bad:#FF3B30;
+  --segon:#FFFFFF; --segshadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04);
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.03);
+  --toast:rgba(28,28,30,.94);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Inter","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#000; --card:#1C1C1E; --card2:#2C2C2E;
+  --label:#FFF; --sec:rgba(235,235,245,.6); --ter:rgba(235,235,245,.3); --sep:rgba(84,84,88,.6);
+  --fill:rgba(120,120,128,.24); --fill2:rgba(120,120,128,.32);
+  --blue:#0A84FF; --sleep:#5E5CE6; --meds:#30D158; --food:#FF9F0A; --distract:#FF453A; --screen:#BF5AF2;
+  --good:#30D158; --bad:#FF453A;
+  --segon:#636366; --segshadow:none; --shadow:none; --toast:rgba(58,58,60,.96);
+}}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{font-family:var(--font);background:var(--bg);color:var(--label);min-height:100vh;line-height:1.35;
+     -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+body.sheet-open{overflow:hidden}
+button,input{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none;-webkit-tap-highlight-color:transparent;text-align:left}
+input{outline:none}
+::selection{background:rgba(0,122,255,.25)}
+.app{max-width:600px;margin:0 auto;padding:0 16px calc(48px + env(safe-area-inset-bottom))}
+@media(min-width:900px){.app{max-width:680px}}
+.c-sleep{--c:var(--sleep)} .c-meds{--c:var(--meds)} .c-food{--c:var(--food)} .c-distract{--c:var(--distract)} .c-screen{--c:var(--screen)}
+
+/* ── header: eyebrow date, large title ── */
+.hdr{padding:calc(16px + env(safe-area-inset-top)) 0 8px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.hdr .eyebrow{font-size:13px;font-weight:600;color:var(--sec);text-transform:uppercase;letter-spacing:.3px}
+.hdr h1{font-size:34px;font-weight:700;letter-spacing:.1px;line-height:1.15;margin-top:1px;display:flex;align-items:center;gap:10px}
+.gear{width:34px;height:34px;border-radius:50%;background:var(--fill);display:flex;align-items:center;justify-content:center;color:var(--sec);flex-shrink:0;margin-bottom:5px}
+.gear svg{width:18px;height:18px;fill:currentColor}
+.gear:active{background:var(--fill2)}
+.badge{font-size:11px;font-weight:700;letter-spacing:.6px;padding:3px 7px;border-radius:6px;background:rgba(255,149,0,.16);color:var(--food)}
+
+/* ── segmented control ── */
+.seg{display:flex;background:var(--fill);border-radius:9px;padding:2px;margin:12px 0 18px}
+.seg button{flex:1;padding:7px 0;border-radius:7px;font-size:13px;font-weight:500;color:var(--label);text-align:center;transition:background .18s,box-shadow .18s}
+.seg button.on{background:var(--segon);font-weight:600;box-shadow:var(--segshadow)}
+.seg.small{margin:0;display:inline-flex}
+.seg.small button{flex:none;padding:5px 12px;font-size:12px}
+.seg.kind{margin:0 0 14px}
+
+/* ── today toolbar ── */
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 14px}
+.prog{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--sec)}
+.prog i{width:7px;height:7px;border-radius:50%;background:var(--fill2)}
+.prog i.on{background:var(--c)}
+.prog span{margin-left:4px}
+.note{font-size:13px;color:var(--sec);background:var(--card);border-radius:12px;padding:10px 14px;margin:-4px 0 14px;box-shadow:var(--shadow);line-height:1.45}
+.note b{color:var(--label);font-weight:600}
+
+/* ── cards ── */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{background:var(--card);border-radius:16px;padding:13px 16px 14px;box-shadow:var(--shadow);position:relative;
+      display:flex;flex-direction:column;gap:4px;min-height:120px;transition:transform .12s;width:100%}
+.card.wide{grid-column:1/-1;min-height:0}
+button.card:active{transform:scale(.98)}
+.card .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px}
+.ttl{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;color:var(--c);letter-spacing:-.1px}
+.ttl svg{width:17px;height:17px;fill:currentColor;flex-shrink:0}
+.card .at{font-size:13px;color:var(--sec);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.chev{width:7px;height:12px;fill:none;stroke:var(--ter);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.card .val{font-size:28px;font-weight:700;letter-spacing:-.4px;line-height:1.1;margin-top:auto}
+.card .val small{font-size:15px;font-weight:500;color:var(--sec);margin-left:4px;letter-spacing:0}
+.card .sub{font-size:13px;color:var(--sec);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card.empty .val{color:var(--ter)}
+.card .plus{width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c);font-size:22px;font-weight:400;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .12s;flex-shrink:0;margin:-4px -4px -4px 0}
+button.card:active .plus{background:color-mix(in srgb,var(--c) 30%,transparent)}
+/* sleep timeline inside the sleep card */
+.tl{position:relative;height:6px;border-radius:3px;background:var(--fill);margin-top:10px}
+.tl i{position:absolute;top:0;height:100%;border-radius:3px;background:var(--c)}
+.tl b{position:absolute;top:-3px;width:2px;height:12px;background:var(--ter);border-radius:1px;transform:translateX(-1px)}
+.tl-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(--ter);margin-top:5px}
+
+/* ── inset grouped list ── */
+.sec{font-size:13px;font-weight:600;color:var(--sec);text-transform:uppercase;letter-spacing:.3px;margin:26px 16px 8px;display:flex;justify-content:space-between;align-items:baseline}
+.sec span{text-transform:none;font-weight:400;letter-spacing:0}
+.list{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.list .row{display:flex;align-items:center;gap:12px;padding:11px 16px;width:100%;min-height:50px;position:relative}
+.list .row+.row::before{content:'';position:absolute;left:38px;right:0;top:0;height:.5px;background:var(--sep)}
+.list .row:active{background:var(--card2)}
+.list .row .dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex-shrink:0}
+.list .row .n{flex:1;font-size:16px;min-width:0}
+.list .row .n small{display:block;font-size:13px;color:var(--sec);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list .row .t{font-size:15px;color:var(--sec);white-space:nowrap}
+.list .empty{padding:24px;text-align:center;color:var(--ter);font-size:15px}
+
+/* ── bottom sheet ── */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.32);opacity:0;transition:opacity .25s;z-index:50;pointer-events:none}
+.backdrop.in{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-width:600px;margin:0 auto;background:var(--card);border-radius:20px 20px 0 0;
+       padding:8px 20px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .32s cubic-bezier(.32,.72,0,1);
+       max-height:90vh;overflow:auto;box-shadow:0 -8px 40px rgba(0,0,0,.18);-webkit-overflow-scrolling:touch}
+.sheet.in{transform:none}
+.sheet:empty{display:none}
+.sheet .grab{width:36px;height:5px;border-radius:3px;background:var(--fill2);margin:0 auto 12px}
+.sh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.sh h2{font-size:22px;font-weight:700;letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.sh h2 svg{width:20px;height:20px;fill:var(--c)}
+.sh .sub{font-size:13px;color:var(--sec);font-weight:500;margin-top:3px}
+.sh .x{width:30px;height:30px;border-radius:50%;background:var(--fill);color:var(--sec);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sh .x svg{width:11px;height:11px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;fill:none}
+@media(min-width:700px){
+  .sheet{bottom:auto;top:50%;left:50%;right:auto;width:520px;max-width:calc(100vw - 32px);border-radius:20px;
+         transform:translate(-50%,-46%);opacity:0;transition:transform .25s cubic-bezier(.32,.72,0,1),opacity .2s;max-height:86vh;padding-top:20px;
+         box-shadow:0 20px 60px rgba(0,0,0,.28)}
+  .sheet.in{transform:translate(-50%,-50%);opacity:1}
+  .sheet .grab{display:none}
+}
+
+/* ── form controls ── */
+.grp{background:var(--card2);border-radius:12px;overflow:hidden;margin-bottom:12px}
+.grp .fr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 14px;min-height:48px;position:relative}
+.grp .fr+.fr::before{content:'';position:absolute;left:14px;right:0;top:0;height:.5px;background:var(--sep)}
+.grp .fr label{font-size:16px;color:var(--label);white-space:nowrap}
+.grp .fr input[type=time]{background:var(--fill);border:none;border-radius:8px;padding:6px 10px;font-size:17px;font-weight:500;color:var(--label);width:auto;color-scheme:light dark}
+.grp .fr input[type=text],.grp .fr input[type=number]{flex:1;background:none;border:none;font-size:16px;color:var(--label);padding:4px 0;min-width:0}
+.grp .fr input[type=number]{text-align:right;font-weight:500}
+.grp input::placeholder{color:var(--ter)}
+.calc{font-size:13px;color:var(--sec);padding:0 4px 12px;min-height:18px}
+.calc b{color:var(--label);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.chip{padding:8px 14px;border-radius:999px;background:var(--fill);font-size:15px;font-weight:500;color:var(--label);display:inline-flex;align-items:center;gap:6px;transition:background .12s,transform .1s;text-align:center}
+.chip:active{transform:scale(.96)}
+.chip.on{background:color-mix(in srgb,var(--c,var(--blue)) 16%,transparent);color:var(--c,var(--blue));font-weight:600}
+.chip small{font-size:12px;font-weight:500;opacity:.8}
+.chip.first{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--c,var(--blue)) 40%,transparent)}
+.chip.add{background:none;box-shadow:inset 0 0 0 1.5px var(--fill2);color:var(--sec);min-width:46px;justify-content:center}
+.chip.rm{background:color-mix(in srgb,var(--distract) 10%,transparent)}
+.chip.rm .x{color:var(--distract);font-weight:700}
+.tip{font-size:13px;color:var(--sec);margin:-4px 0 14px;line-height:1.45}
+.mg{display:flex;gap:8px;margin-bottom:14px}
+.mg input{flex:1;background:var(--card2);border:none;border-radius:10px;padding:11px 14px;font-size:16px;color:var(--label)}
+.mg .btn{width:auto;padding:0 18px;margin:0}
+.btn{width:100%;padding:15px;border-radius:12px;font-size:17px;font-weight:600;background:var(--blue);color:#FFF;text-align:center;transition:opacity .12s,transform .1s}
+.btn:active{opacity:.85;transform:scale(.99)}
+.btn.tint{background:var(--fill);color:var(--blue)}
+.btn.danger{background:none;color:var(--distract);font-weight:500;padding:12px}
+.acts{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+
+/* ── stat cards (week / month) ── */
+.stat{background:var(--card);border-radius:16px;padding:14px 16px 12px;box-shadow:var(--shadow);margin-bottom:12px}
+.stat .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+.pill{font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;background:var(--fill);color:var(--sec);white-space:nowrap}
+.pill.up{background:color-mix(in srgb,var(--good) 15%,transparent);color:var(--good)}
+.pill.dn{background:color-mix(in srgb,var(--bad) 15%,transparent);color:var(--bad)}
+.stat .big{font-size:26px;font-weight:700;letter-spacing:-.4px;line-height:1.1}
+.stat .big small{font-size:14px;font-weight:500;color:var(--sec);margin-left:5px;letter-spacing:0}
+.stat .sub{font-size:13px;color:var(--sec);margin:3px 0 10px}
+.stat .chart{display:block;width:100%;height:auto;overflow:visible}
+.stat .chart text{font-family:var(--font);font-size:11px;fill:var(--ter)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--sec);margin-top:8px}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.legend i.dash{width:14px;height:0;border-top:1.5px dashed var(--sec);border-radius:0}
+
+/* ── setup ── */
+.setup h2{font-size:22px;font-weight:700;margin:6px 0 6px;letter-spacing:-.3px}
+.setup p{font-size:15px;color:var(--sec);line-height:1.45;margin-bottom:14px}
+.setup .sec{margin-left:0;margin-right:0}
+.setup .foot{font-size:12px;color:var(--ter);margin-top:16px;line-height:1.5}
+
+/* ── toast ── */
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translate(-50%,12px);opacity:0;background:var(--toast);color:#FFF;
+       padding:11px 16px;border-radius:999px;font-size:14px;font-weight:500;z-index:100;transition:all .22s;display:flex;gap:12px;align-items:center;
+       box-shadow:0 8px 30px rgba(0,0,0,.25);white-space:nowrap;max-width:92vw;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--blue));flex-shrink:0}
+.toast span{overflow:hidden;text-overflow:ellipsis}
+.toast button{color:#0A84FF;font-weight:600;font-size:14px;padding:2px 2px}
+.toast.err i{background:var(--distract)}
+
+/* ── skeleton ── */
+.sk{height:120px;border-radius:16px;background:var(--card);opacity:.7;animation:pulse 1.2s ease-in-out infinite}
+.sk.wide{grid-column:1/-1;height:96px}
+@keyframes pulse{0%,100%{opacity:.7}50%{opacity:.35}}
+
+@media(max-width:360px){.hdr h1{font-size:30px}.card .val{font-size:25px}.seg.small button{padding:5px 9px}}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<div class="backdrop" id="backdrop" data-act="close-form"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG
+   ═══════════════════════════════════════════════════════════ */
+// Your day ends at 2:30 AM. Anything logged between 00:00 and 02:29 belongs
+// to the PREVIOUS calendar date. Change this one number to move the boundary.
+var DAY_START_MIN = 150;                 // 2:30 AM, in minutes after midnight
+var WAKE_TARGET_MIN = 12*60;             // 12:00 PM — drawn as the target line on the sleep chart
+
+var T = {
+  sleep:    {label:'Sleep',    color:'var(--sleep)', kind:'sleep',   good:'earlier'},
+  meds:     {label:'Meds',     color:'var(--meds)', kind:'once',    good:'taken'},
+  food:     {label:'Food',     color:'var(--food)', kind:'multi',   good:'more'},
+  distract: {label:'Distract', color:'var(--distract)', kind:'count',   good:'fewer'},
+  screen:   {label:'Screen',   color:'var(--screen)', kind:'minutes', good:'less'}
+};
+var ORDER = ['sleep','meds','food','distract','screen'];
+
+// The one med the dots, streaks and the "still open" line track. Every other med in the
+// list logs the same way but counts as extra.
+var PRIMARY_MED = 'atomoxetine';
+// Starting chip lists. The moment you add or remove anything in the app, the lists live in
+// the Sheet's "Lists" tab (with a copy in this browser) and these defaults stop mattering.
+var DEFAULT_LISTS = {
+  meds: ['atomoxetine','vitamin d','iron'],
+  food: ['chicken soup','rice + beef','nuggets','sandwich','ramen','eggs','oatmeal','pizza',
+         'oranges','grapes','cheese','salami','chips','nuts','yogurt','toast']
+};
+var SCREEN_CHIPS = [15,30,45,60,120,180,240,300];   // minutes — the +4h / +5h chips are for edit days
+
+/* ═══════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════ */
+// Storage that cannot throw. Sandboxed viewers, private mode, and some file:// contexts
+// block localStorage; the app must still run, so fall back to memory for the session.
+var LS={_m:{},
+  get:function(k){try{return localStorage.getItem(k)}catch(e){return LS._m[k]===undefined?null:LS._m[k]}},
+  set:function(k,v){try{localStorage.setItem(k,v)}catch(e){LS._m[k]=v}},
+  del:function(k){try{localStorage.removeItem(k)}catch(e){delete LS._m[k]}}};
+
+var S = {
+  view: LS.get('dl_view') || 'day',
+  day: 'today',          // 'today' | 'yesterday' — which log-day the Today screen shows and logs to
+  events: [],            // {id, ts, logDay, tracker, value, value2, note}
+  loading: true,
+  form: null,            // which inline form is open: {sleep:dayKey}|'meds'|'food'|'screen'|{edit:id}|null
+  setup: false,
+  api: LS.get('dl_api') || '',
+  key: LS.get('dl_key') || '',
+  demo: LS.get('dl_demo') === '1',
+  lists: loadLists()     // {meds:[...], food:[...]} — chip lists, editable from the "+" chip in each form
+};
+var undoStack = [];
+// Lists are lowercase, trimmed, unique. An empty list falls back to the defaults so a form is never blank.
+function normLists(l){var out={};['meds','food'].forEach(function(k){var a=(l&&l[k])||[];if(typeof a==='string'){try{a=JSON.parse(a)}catch(e){a=[]}}
+  a=a.map(function(x){return String(x).toLowerCase().trim()}).filter(function(x,i,arr){return x&&arr.indexOf(x)===i});out[k]=a.length?a:DEFAULT_LISTS[k].slice()});return out}
+function loadLists(){var raw=LS.get('dl_lists');if(raw){try{return normLists(JSON.parse(raw))}catch(e){}}return normLists(DEFAULT_LISTS)}
+function saveLists(){LS.set('dl_lists',JSON.stringify(S.lists));API.lists(S.lists).then(function(r){if(r&&r.error)toast('List not saved to Sheet: '+r.error,'err')})}
+function cap(s){return String(s).replace(/\b[a-z]/g,function(c){return c.toUpperCase()})}
+// Which med a meds row is. Old rows stored value="taken" with no name; those are the primary med.
+function medName(e){var v=String(e.value||'').toLowerCase().trim();if(!v||v==='taken')v=String(e.value2||'').toLowerCase().trim()||PRIMARY_MED;return v}
+
+/* ═══════════════════════════════════════════════════════════
+   DAY MATH — the 2:30 AM rule lives here and nowhere else
+   ═══════════════════════════════════════════════════════════ */
+function pad(n){return n<10?'0'+n:''+n}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function parseYmd(s){var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+// Which log-day does a real timestamp belong to?
+function logDayOf(d){return ymd(new Date(d.getTime()-DAY_START_MIN*60000))}
+function todayKey(){return logDayOf(new Date())}
+// Minutes since the day boundary (0 = 2:30 AM). Lets us plot times that cross midnight on one axis.
+function minSinceStart(d){var m=(d.getHours()*60+d.getMinutes()-DAY_START_MIN);return m<0?m+1440:m}
+// Convert a "HH:MM" clock string on a given log-day into a real Date.
+// Clock times before the boundary fall on the NEXT calendar date.
+function clockOnDay(dayKey,hhmm){
+  var d=parseYmd(dayKey);var p=hhmm.split(':');var h=+p[0],m=+p[1];
+  d.setHours(h,m,0,0);
+  if(h*60+m<DAY_START_MIN)d.setDate(d.getDate()+1);
+  return d;
+}
+function hhmm(d){return pad(d.getHours())+':'+pad(d.getMinutes())}
+function fmtTime(d){var h=d.getHours(),m=d.getMinutes(),ap=h>=12?'PM':'AM';h=h%12;if(h===0)h=12;return h+':'+pad(m)+' '+ap}
+function fmtTimeShort(d){var h=d.getHours(),m=d.getMinutes(),ap=h>=12?'p':'a';h=h%12;if(h===0)h=12;return m?h+':'+pad(m)+ap:h+ap}
+function fmtMinOfDay(mm){ // minutes since boundary → short clock string, "1:15p"
+  mm=Math.round(mm);var t=((mm+DAY_START_MIN)%1440+1440)%1440;var h=Math.floor(t/60),m=t%60,ap=h>=12?'p':'a';h=h%12;if(h===0)h=12;return m?h+':'+pad(m)+ap:h+ap}
+function fmtMinLong(mm){ // same, "1:15 PM" — for headline numbers
+  mm=Math.round(mm);var t=((mm+DAY_START_MIN)%1440+1440)%1440;var h=Math.floor(t/60),m=t%60,ap=h>=12?'PM':'AM';h=h%12;if(h===0)h=12;return h+':'+pad(m)+' '+ap}
+var DN=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var DNS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDayLong(k){var d=parseYmd(k);return DN[d.getDay()]+', '+MN[d.getMonth()]+' '+d.getDate()}
+function dayList(n,endKey){ // last n log-days ending at endKey (inclusive), oldest first
+  var out=[],d=parseYmd(endKey||todayKey());
+  for(var i=n-1;i>=0;i--){var x=new Date(d);x.setDate(d.getDate()-i);out.push(ymd(x))}
+  return out;
+}
+function hrs(ms){return Math.round(ms/360000)/10}
+
+/* ═══════════════════════════════════════════════════════════
+   API — JSONP to Apps Script, or localStorage in demo mode
+   ═══════════════════════════════════════════════════════════ */
+function jsonp(params){
+  return new Promise(function(res){
+    var cb='dl_'+Date.now()+'_'+Math.floor(Math.random()*1e5);
+    var sc=document.createElement('script'),done=false;
+    var t=setTimeout(function(){if(done)return;done=true;delete window[cb];sc.remove();res({error:'Timeout — Apps Script may be cold-starting. Try again.'})},28000);
+    window[cb]=function(d){if(done)return;done=true;clearTimeout(t);delete window[cb];sc.remove();res(d)};
+    sc.onerror=function(){if(done)return;done=true;clearTimeout(t);delete window[cb];sc.remove();res({error:'Network error'})};
+    sc.src=S.api+'?'+params+'&key='+encodeURIComponent(S.key)+'&callback='+cb;
+    document.body.appendChild(sc);
+  });
+}
+var API={
+  async load(days){
+    if(S.demo){return {ok:true,events:demoLoad()}}
+    var ks=dayList(days);
+    return jsonp('action=range&from='+ks[0]+'&to='+ks[ks.length-1]);
+  },
+  async add(e){ if(S.demo){demoSave(); return {ok:true}} return jsonp('payload='+encodeURIComponent(JSON.stringify({action:'add',event:e}))) },
+  async update(e){ if(S.demo){demoSave(); return {ok:true}} return jsonp('payload='+encodeURIComponent(JSON.stringify({action:'update',event:e}))) },
+  async del(id){ if(S.demo){demoSave(); return {ok:true}} return jsonp('payload='+encodeURIComponent(JSON.stringify({action:'delete',id:id}))) },
+  async lists(l){ if(S.demo||!S.api)return {ok:true}; return jsonp('payload='+encodeURIComponent(JSON.stringify({action:'lists',lists:l}))) }
+};
+function demoSave(){LS.set('dl_demo_events',JSON.stringify(S.events))}
+function demoLoad(){
+  var raw=LS.get('dl_demo_events');
+  if(raw){try{return JSON.parse(raw)}catch(e){}}
+  return demoGenerate();
+}
+// Realistic sample data shaped like a late-schedule week, with gaps so "open" states show.
+function demoGenerate(){
+  var ev=[],today=parseYmd(todayKey());
+  for(var i=34;i>=1;i--){
+    var d=new Date(today);d.setDate(today.getDate()-i);var k=ymd(d);
+    if(Math.random()<0.12)continue;                       // a missed day
+    var wakeMin=13*60+Math.round((Math.random()-0.5)*180)+Math.round(i*1.5); // drifting earlier toward today
+    var wake=clockOnDay(k,pad(Math.floor(wakeMin/60)%24)+':'+pad(wakeMin%60));
+    var dur=6.5+Math.random()*2.5;var onset=new Date(wake.getTime()-dur*3600000);
+    ev.push({id:'d'+k+'s',ts:wake.toISOString(),logDay:k,tracker:'sleep',value:onset.toISOString(),value2:wake.toISOString(),note:''});
+    if(Math.random()<0.8){var mt=new Date(wake.getTime()+(1+Math.random()*3)*3600000);ev.push({id:'d'+k+'m',ts:mt.toISOString(),logDay:k,tracker:'meds',value:PRIMARY_MED,value2:'',note:''});
+      if(Math.random()<0.5)ev.push({id:'d'+k+'m2',ts:new Date(mt.getTime()+60000).toISOString(),logDay:k,tracker:'meds',value:'vitamin d',value2:'',note:''});
+      if(Math.random()<0.3)ev.push({id:'d'+k+'m3',ts:new Date(mt.getTime()+120000).toISOString(),logDay:k,tracker:'meds',value:'iron',value2:'',note:''})}
+    var nf=Math.random()<0.25?1:Math.random()<0.6?2:3;
+    for(var f=0;f<nf;f++){var ft=new Date(wake.getTime()+(2+f*4+Math.random()*2)*3600000);var snack=f>0&&Math.random()<0.4;ev.push({id:'d'+k+'f'+f,ts:ft.toISOString(),logDay:k,tracker:'food',value:'',value2:snack?'snack':'meal',note:snack?['grapes','chips','nuts'][Math.floor(Math.random()*3)]:['chicken soup','rice + beef','nuggets','soup'][Math.floor(Math.random()*4)]})}
+    var nd=Math.floor(Math.random()*6);for(var x=0;x<nd;x++){var dt=new Date(wake.getTime()+(1+Math.random()*10)*3600000);ev.push({id:'d'+k+'x'+x,ts:dt.toISOString(),logDay:k,tracker:'distract',value:1,value2:'',note:''})}
+    if(Math.random()<0.85){var sm=Math.round(20+Math.random()*120);var st=new Date(wake.getTime()+8*3600000);ev.push({id:'d'+k+'sc',ts:st.toISOString(),logDay:k,tracker:'screen',value:sm,value2:'phone',note:''});
+      if(Math.random()<0.6){var sm2=Math.round(30+Math.random()*120);ev.push({id:'d'+k+'sd',ts:new Date(st.getTime()+3600000).toISOString(),logDay:k,tracker:'screen',value:sm2,value2:'desktop',note:''})}}
+  }
+  return ev;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DERIVED — one object per log-day
+   ═══════════════════════════════════════════════════════════ */
+function dayStats(k){
+  var ev=S.events.filter(function(e){return e.logDay===k});
+  var sl=null;for(var i=0;i<ev.length;i++){if(ev[i].tracker==='sleep'){sl=ev[i];break}}
+  var sleep=null;
+  if(sl&&sl.value&&sl.value2){var o=new Date(sl.value),w=new Date(sl.value2);sleep={id:sl.id,onset:o,wake:w,dur:hrs(w-o),onsetMin:minSinceStart(o),wakeMin:minSinceStart(w)}}
+  var meds=ev.filter(function(e){return e.tracker==='meds'}).sort(function(a,b){return a.ts<b.ts?-1:1});
+  var medsBy={};meds.forEach(function(e){var n=medName(e);if(!medsBy[n])medsBy[n]=e});   // first entry per med
+  var prim=medsBy[PRIMARY_MED]||null,others=Object.keys(medsBy).filter(function(n){return n!==PRIMARY_MED});
+  var food=ev.filter(function(e){return e.tracker==='food'}).sort(function(a,b){return a.ts<b.ts?-1:1});
+  var dist=ev.filter(function(e){return e.tracker==='distract'});
+  var scr=ev.filter(function(e){return e.tracker==='screen'});
+  var meals=food.filter(function(e){return e.value2!=='snack'}).length,snacks=food.length-meals;
+  var ph=scr.filter(function(e){return e.value2!=='desktop'}).reduce(function(a,e){return a+(+e.value||0)},0);
+  var dk=scr.filter(function(e){return e.value2==='desktop'}).reduce(function(a,e){return a+(+e.value||0)},0);
+  return {
+    key:k, any:ev.length>0, sleep:sleep,
+    medsTaken:!!prim, medsTime:prim?new Date(prim.ts):null, medsN:meds.length, medsBy:medsBy, medsOthers:others,
+    foodN:food.length, meals:meals, snacks:snacks, foodScore:Math.round((meals+snacks/3)*10)/10, firstFood:food.length?new Date(food[0].ts):null,
+    distractN:dist.reduce(function(a,e){return a+(+e.value||1)},0), distractLogged:dist.length>0,
+    screenMin:ph+dk, screenPhone:ph, screenDesk:dk, screenLogged:scr.length>0
+  };
+}
+function avg(a){var v=a.filter(function(x){return x!==null&&x!==undefined&&!isNaN(x)});if(!v.length)return null;return v.reduce(function(s,x){return s+x},0)/v.length}
+// Direction: compare the last 7 days to the 7 before. Returns {now, prev, diff}.
+function trend(metric){
+  var d14=dayList(14);var a=d14.slice(0,7).map(function(k){return metric(dayStats(k))}),b=d14.slice(7).map(function(k){return metric(dayStats(k))});
+  var pa=avg(a),pb=avg(b);
+  return {prev:pa,now:pb,diff:(pa===null||pb===null)?null:pb-pa};
+}
+function metricFor(t){
+  if(t==='sleep')return function(s){return s.sleep?s.sleep.wakeMin:null};
+  if(t==='meds')return function(s){return s.any?(s.medsTaken?1:0):null};
+  if(t==='food')return function(s){return s.any?s.foodScore:null};
+  if(t==='distract')return function(s){return s.any?s.distractN:null};
+  if(t==='screen')return function(s){return s.any?s.screenMin:null};
+}
+// Is a change good, bad, or flat for this tracker?
+function judge(t,diff){
+  if(diff===null||Math.abs(diff)<1e-9)return 'flat';
+  var g=T[t].good;
+  if(g==='earlier'||g==='fewer'||g==='less')return diff<0?'up':'dn';
+  return diff>0?'up':'dn';
+}
+function arrow(j){return j==='up'?'▲':j==='dn'?'▼':'—'}
+
+/* ═══════════════════════════════════════════════════════════
+   SVG CHARTS — no library. Every chart is drawn at the real pixel
+   width of its card, so nothing is ever stretched or squashed.
+   ═══════════════════════════════════════════════════════════ */
+// Width available inside a stat card: app width minus app padding minus card padding.
+function chartWidth(){var app=document.getElementById('app');return Math.max(220,(app?app.clientWidth:360)-32-32)}
+function svgOpen(w,h){return '<svg class="chart" viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'">'}
+var GRID='style="stroke:var(--sep);stroke-width:1"',TXT='style="fill:var(--ter)"',TXT2='style="fill:var(--sec)"';
+// Horizontal gridlines with labels on the right, iOS Health style. y(v) maps a value to a pixel.
+function yAxis(ticks,y,w,pr,fmt){var s='';ticks.forEach(function(v){var yy=y(v).toFixed(1);
+  s+='<line x1="0" x2="'+(w-pr)+'" y1="'+yy+'" y2="'+yy+'" '+GRID+'/><text x="'+(w-pr+6)+'" y="'+(+yy+4).toFixed(1)+'" '+TXT+'>'+fmt(v)+'</text>'});return s}
+function xLabels(labels,x,h,todayIdx){var s='';labels.forEach(function(l,i){if(!l)return;
+  s+='<text x="'+x(i).toFixed(1)+'" y="'+(h-4)+'" text-anchor="middle" '+(i===todayIdx?'style="fill:var(--label);font-weight:600"':TXT)+'>'+l+'</text>'});return s}
+// Time-of-day ticks (minutes since the 2:30 boundary), every 2 or 4 hours depending on the span.
+function timeTicks(yMin,yMax){var step=(yMax-yMin)>600?240:120,off=((-DAY_START_MIN)%step+step)%step,out=[];   // off keeps ticks on whole clock hours
+  for(var v=Math.ceil((yMin-off)/step)*step+off;v<=yMax;v+=step)out.push(v);return out}
+
+// Sleep: one vertical bar per day from fell-asleep to woke, on a time-of-day axis that runs downward.
+// spans[i] = {a,b} in minutes since the boundary (a may be negative = the previous evening), or null.
+function spanChart(o){
+  var w=o.w,h=o.h,pr=40,pt=8,pb=18,iw=w-pr,ih=h-pt-pb,n=o.spans.length;
+  var Y=function(v){return pt+((v-o.yMin)/(o.yMax-o.yMin))*ih},X=function(i){return (i+0.5)*iw/n};
+  var bw=Math.max(3,Math.min(18,(iw/n)*0.55));
+  var s=svgOpen(w,h)+yAxis(timeTicks(o.yMin,o.yMax),Y,w,pr,fmtMinOfDay);
+  if(o.ref!==undefined){var ry=Y(o.ref).toFixed(1);s+='<line x1="0" x2="'+(w-pr)+'" y1="'+ry+'" y2="'+ry+'" style="stroke:var(--sec);stroke-dasharray:4 4;stroke-width:1.2"/>'}
+  o.spans.forEach(function(sp,i){var x=X(i);
+    if(!sp){s+='<line x1="'+(x-bw/2).toFixed(1)+'" x2="'+(x+bw/2).toFixed(1)+'" y1="'+(pt+ih-1)+'" y2="'+(pt+ih-1)+'" style="stroke:var(--fill2);stroke-width:2;stroke-dasharray:2 2"/>';return}
+    var y1=Y(Math.max(sp.a,o.yMin)),y2=Y(Math.min(sp.b,o.yMax));
+    s+='<rect x="'+(x-bw/2).toFixed(1)+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(2,y2-y1).toFixed(1)+'" rx="'+Math.min(4,bw/2)+'" style="fill:var(--c)" opacity="'+(i===o.todayIdx?'1':'.8')+'"/>'});
+  return s+xLabels(o.labels,X,h,o.todayIdx)+'</svg>';
+}
+// Meds: a dot at the time taken each day; a hollow red dot on the baseline for a logged day with no primary med.
+function scatterChart(o){
+  var w=o.w,h=o.h,pr=40,pt=8,pb=18,iw=w-pr,ih=h-pt-pb,n=o.vals.length;
+  var Y=function(v){return pt+((v-o.yMin)/(o.yMax-o.yMin))*ih},X=function(i){return (i+0.5)*iw/n};
+  var s=svgOpen(w,h)+yAxis(timeTicks(o.yMin,o.yMax),Y,w,pr,fmtMinOfDay);
+  o.vals.forEach(function(v,i){var x=X(i).toFixed(1);
+    if(v!==null)s+='<circle cx="'+x+'" cy="'+Y(v).toFixed(1)+'" r="'+(n>10?3.5:5)+'" style="fill:var(--c)"/>';
+    else if(o.missed[i])s+='<circle cx="'+x+'" cy="'+(pt+ih-4)+'" r="'+(n>10?3:4.5)+'" style="fill:none;stroke:var(--bad);stroke-width:1.5"/>'});
+  return s+xLabels(o.labels,X,h,o.todayIdx)+'</svg>';
+}
+// Bars, optionally stacked (vals2 on top of vals). missing[i] draws a faint dash instead of nothing.
+function barsChart(o){
+  var w=o.w,h=o.h,pr=34,pt=8,pb=18,iw=w-pr,ih=h-pt-pb,n=o.vals.length;
+  var tot=o.vals.map(function(v,i){return (v||0)+((o.vals2&&o.vals2[i])||0)});
+  var mx=o.max||Math.max(1,Math.max.apply(null,tot));
+  var Y=function(v){return pt+ih-(v/mx)*ih},X=function(i){return (i+0.5)*iw/n};
+  var bw=Math.max(3,Math.min(22,(iw/n)*0.6)),rx=Math.min(3,bw/2);
+  var ticks=[];for(var g=0;g<=3;g++)ticks.push(mx*g/3);
+  var s=svgOpen(w,h)+yAxis(ticks,Y,w,pr,o.yFmt||function(v){return Math.round(v)});
+  if(o.avg){var ay=Y(o.avg).toFixed(1);s+='<line x1="0" x2="'+(w-pr)+'" y1="'+ay+'" y2="'+ay+'" style="stroke:var(--sec);stroke-dasharray:4 4;stroke-width:1.2"/>'}
+  o.vals.forEach(function(v,i){var x=(X(i)-bw/2).toFixed(1);
+    if(o.missing&&o.missing[i]){s+='<line x1="'+x+'" x2="'+(X(i)+bw/2).toFixed(1)+'" y1="'+(pt+ih-1)+'" y2="'+(pt+ih-1)+'" style="stroke:var(--fill2);stroke-width:2;stroke-dasharray:2 2"/>';return}
+    v=v||0;var bh=(v/mx)*ih;
+    if(v)s+='<rect x="'+x+'" y="'+Y(v).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="'+rx+'" style="fill:var(--c)" opacity="'+(i===o.todayIdx?'1':'.85')+'"/>';
+    else s+='<rect x="'+x+'" y="'+(pt+ih-2)+'" width="'+bw.toFixed(1)+'" height="2" rx="1" style="fill:var(--c)" opacity=".3"/>';
+    if(o.vals2&&o.vals2[i]){var v2=o.vals2[i],bh2=(v2/mx)*ih;s+='<rect x="'+x+'" y="'+(Y(v)-bh2).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh2.toFixed(1)+'" rx="'+rx+'" style="fill:var(--c)" opacity=".4"/>'}});
+  return s+xLabels(o.labels,X,h,o.todayIdx)+'</svg>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RENDER
+   ═══════════════════════════════════════════════════════════ */
+function esc(s){if(s===null||s===undefined)return'';var d=document.createElement('div');d.textContent=String(s);return d.innerHTML}
+var ICON={
+  sleep:'<svg viewBox="0 0 24 24"><path d="M20.7 14.3A8.5 8.5 0 0 1 9.7 3.3a.6.6 0 0 0-.7-.8A9.5 9.5 0 1 0 21.5 15a.6.6 0 0 0-.8-.7z"/></svg>',
+  meds:'<svg viewBox="0 0 24 24"><g transform="rotate(-45 12 12)"><rect x="2.5" y="8.25" width="19" height="7.5" rx="3.75"/><path d="M12 8.25h5.75a3.75 3.75 0 0 1 0 7.5H12z" fill="#fff" opacity=".38"/></g></svg>',
+  food:'<svg viewBox="0 0 24 24"><path d="M6.5 2a.75.75 0 0 1 .75.75V8h1V2.75a.75.75 0 0 1 1.5 0V8h1V2.75a.75.75 0 0 1 1.5 0V9a3.25 3.25 0 0 1-2.5 3.16V21.25a.75.75 0 0 1-1.5 0V12.16A3.25 3.25 0 0 1 5.75 9V2.75A.75.75 0 0 1 6.5 2zm10.25 0c.41 0 .75.34.75.75v18.5a.75.75 0 0 1-1.5 0V14h-1.25a.75.75 0 0 1-.75-.75V7c0-2.76 1.24-5 2.75-5z"/></svg>',
+  distract:'<svg viewBox="0 0 24 24"><path d="M13.5 2.2 4.6 13.4a.6.6 0 0 0 .47.98H10l-1.4 7.1c-.1.55.6.85.95.4l8.9-11.2a.6.6 0 0 0-.47-.98H14l1.4-7.1c.1-.55-.6-.85-.95-.4z"/></svg>',
+  screen:'<svg viewBox="0 0 24 24"><path d="M4 3.5h16A2.5 2.5 0 0 1 22.5 6v9a2.5 2.5 0 0 1-2.5 2.5h-6.75V19.5H16a.75.75 0 0 1 0 1.5H8a.75.75 0 0 1 0-1.5h2.75v-2H4A2.5 2.5 0 0 1 1.5 15V6A2.5 2.5 0 0 1 4 3.5zM3 6v9a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1z"/></svg>'
+};
+var CHEV='<svg class="chev" viewBox="0 0 8 14"><path d="M1.5 1.5 6 7l-4.5 5.5"/></svg>';
+var GEAR='<svg viewBox="0 0 24 24"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.7 7.7 0 0 0-1.7-1L15 3.3H9l-.4 2.6a7.7 7.7 0 0 0-1.7 1l-2.5-1-2 3.5L4.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.7 7.7 0 0 0 1.7 1l.4 2.6h6l.4-2.6a7.7 7.7 0 0 0 1.7-1l2.5 1 2-3.5zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>';
+var XICON='<svg viewBox="0 0 12 12"><path d="M1.5 1.5l9 9M10.5 1.5l-9 9"/></svg>';
+
+function fmtMins(m){m=Math.round(m);if(m<60)return m+'m';var h=Math.floor(m/60),r=m%60;return r?h+'h '+r+'m':h+'h'}
+function fmtDur(hours){return fmtMins(hours*60)}
+function rangeLabel(days){var a=parseYmd(days[0]),b=parseYmd(days[days.length-1]);return MNS[a.getMonth()]+' '+a.getDate()+' – '+MNS[b.getMonth()]+' '+b.getDate()}
+function activeDay(){return S.day==='yesterday'?dayList(2)[0]:todayKey()}
+
+function render(){
+  var app=document.getElementById('app'),h='';
+  var setup=S.setup||(!S.api&&!S.demo);
+  h+=renderHeader(setup);
+  if(setup){h+=renderSetup();app.innerHTML=h;renderSheet();return}
+  h+='<div class="seg">'+['day','week','month'].map(function(v){return '<button data-view="'+v+'" class="'+(S.view===v?'on':'')+'">'+(v==='day'?'Today':v==='week'?'Week':'Month')+'</button>'}).join('')+'</div>';
+  if(S.loading){h+='<div class="cards"><div class="sk wide"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div>';app.innerHTML=h;return}
+  if(S.view==='day')h+=renderDay();else h+=renderStats(S.view==='week'?7:30);
+  app.innerHTML=h;
+  renderSheet();
+}
+function renderHeader(setup){
+  var now=new Date(),tk=todayKey(),late=ymd(now)!==tk,title,eyebrow;
+  if(setup){title='Daylog';eyebrow=(!S.api&&!S.demo)?'Welcome':'Settings'}
+  else if(S.view==='day'){var k=activeDay(),d=parseYmd(k);title=k===tk?'Today':'Yesterday';
+    eyebrow=DN[d.getDay()]+', '+MN[d.getMonth()]+' '+d.getDate()+' · '+fmtTime(now)+(late&&k===tk?' · until '+fmtMinOfDay(0):'')}
+  else if(S.view==='week'){title='This Week';eyebrow=rangeLabel(dayList(7))+' · last 7 days'}
+  else {title='This Month';eyebrow=rangeLabel(dayList(30))+' · last 30 days'}
+  return '<div class="hdr"><div><div class="eyebrow">'+eyebrow+'</div><h1>'+title+(S.demo?'<span class="badge">DEMO</span>':'')+'</h1></div>'+
+    '<button class="gear" data-act="setup" title="Settings">'+GEAR+'</button></div>';
+}
+function renderSetup(){
+  var first=!S.api&&!S.demo,h='<div class="setup">';
+  if(first){
+    h+='<h2>Nothing here yet</h2><p>Daylog keeps everything in a Google Sheet you own. See it working right now with demo data, or connect a Sheet — ten minutes, steps in the README.</p>';
+    h+='<button class="btn" data-act="demo">See It With Demo Data</button><div class="sec" style="margin-top:24px">Or connect your Sheet</div>';
+  } else h+='<h2>Settings</h2><p>The URL and key stay in this browser only — they are never written into the page.</p>';
+  h+='<div class="grp"><div class="fr"><input type="text" id="su-api" placeholder="Apps Script URL (…/exec)" value="'+esc(S.api)+'" autocapitalize="off" autocorrect="off"></div>'+
+     '<div class="fr"><input type="text" id="su-key" placeholder="Key (SECRET_KEY from Code.gs)" value="'+esc(S.key)+'" autocapitalize="off" autocorrect="off"></div></div>';
+  h+='<div class="acts"><button class="btn'+(first?' tint':'')+'" data-act="save-setup">Connect</button>'+
+     (first?'':'<button class="btn tint" data-act="demo">'+(S.demo?'Reset Demo Data':'Switch to Demo Data')+'</button><button class="btn tint" data-act="close-setup">Cancel</button>')+
+     (S.demo?'<button class="btn danger" data-act="leave-demo">Leave Demo</button>':'')+'</div>';
+  h+='<div class="foot">Day ends at '+fmtMinOfDay(0)+'. Wake target '+fmtMinOfDay(WAKE_TARGET_MIN-DAY_START_MIN)+'. Primary med '+esc(cap(PRIMARY_MED))+'. All three are constants at the top of the script.</div></div>';
+  return h;
+}
+
+/* ── TODAY ── */
+function renderDay(){
+  var tk=todayKey(),yk=dayList(2)[0],k=activeDay(),isToday=k===tk,s=dayStats(k),h='',yd=parseYmd(yk);
+  var logged=[s.sleep?1:0,s.medsTaken?1:0,s.foodN?1:0,s.distractLogged?1:0,s.screenLogged?1:0],n=logged.reduce(function(a,b){return a+b},0);
+  h+='<div class="toolbar"><div class="seg small"><button class="'+(isToday?'on':'')+'" data-day-set="today">Today</button><button class="'+(!isToday?'on':'')+'" data-day-set="yesterday">Yesterday</button></div>';
+  h+='<div class="prog">'+ORDER.map(function(t,i){return '<i class="c-'+t+(logged[i]?' on':'')+'"></i>'}).join('')+'<span>'+n+' of 5</span></div></div>';
+  if(!isToday)h+='<div class="note">Logging to <b>'+DN[yd.getDay()]+', '+MNS[yd.getMonth()]+' '+yd.getDate()+'</b>. Taps use the current clock time on that day — change it in the log if it was earlier.</div>';
+  h+='<div class="cards">';
+  // sleep — full width, with a 24h timeline of the night
+  h+='<button class="card wide c-sleep'+(s.sleep?'':' empty')+'" data-act="open-sleep"><div class="top"><div class="ttl">'+ICON.sleep+'Sleep</div><div class="at">'+(s.sleep?fmtTime(s.sleep.onset)+' – '+fmtTime(s.sleep.wake):(isToday?'Last night':'That night'))+CHEV+'</div></div>';
+  if(s.sleep){var a=s.sleep.onsetMin,b=s.sleep.wakeMin,tg=WAKE_TARGET_MIN-DAY_START_MIN,segs='';
+    if(a<=b)segs='<i style="left:'+(a/14.4).toFixed(2)+'%;width:'+((b-a)/14.4).toFixed(2)+'%"></i>';
+    else segs='<i style="left:'+(a/14.4).toFixed(2)+'%;width:'+((1440-a)/14.4).toFixed(2)+'%"></i><i style="left:0;width:'+(b/14.4).toFixed(2)+'%"></i>';
+    h+='<div class="val">'+fmtDur(s.sleep.dur)+'<small>asleep '+DNS[s.sleep.onset.getDay()]+', woke '+DNS[s.sleep.wake.getDay()]+'</small></div>';
+    h+='<div class="tl">'+segs+'<b style="left:'+(tg/14.4).toFixed(2)+'%"></b></div><div class="tl-lbl"><span>'+fmtMinOfDay(0)+'</span><span>target '+fmtMinOfDay(tg)+'</span><span>'+fmtMinOfDay(0)+'</span></div>'}
+  else h+='<div class="val">—</div><div class="sub">Fell asleep and woke up — log it when you get up</div>';
+  h+='</button>';
+  // meds — follows the primary med; other meds ride along in the subtitle
+  var oth=s.medsOthers.map(cap).join(', ');
+  h+='<button class="card c-meds'+(s.medsTaken?'':' empty')+'" data-act="open-meds"><div class="top"><div class="ttl">'+ICON.meds+'Meds</div><div class="at">'+CHEV+'</div></div>'+
+     '<div class="val">'+(s.medsTaken?fmtTime(s.medsTime):'—')+'</div><div class="sub">'+(s.medsTaken?esc(cap(PRIMARY_MED))+(oth?' + '+esc(oth):''):(oth?'No '+esc(PRIMARY_MED)+' · '+esc(oth):'Not taken yet'))+'</div></button>';
+  // food — score = meals + snacks/3
+  h+='<button class="card c-food'+(s.foodN?'':' empty')+'" data-act="open-food"><div class="top"><div class="ttl">'+ICON.food+'Food</div><div class="at">'+(s.foodN?'first '+fmtTimeShort(s.firstFood):'')+CHEV+'</div></div>'+
+     '<div class="val">'+(s.foodN?s.foodScore+'<small>meals</small>':'—')+'</div><div class="sub">'+(s.foodN?s.meals+' meal'+(s.meals===1?'':'s')+(s.snacks?' · '+s.snacks+' snack'+(s.snacks===1?'':'s'):''):'Nothing yet')+'</div></button>';
+  // distract — the whole card is the counter
+  h+='<button class="card c-distract'+(s.distractLogged?'':' empty')+'" data-act="log-now" data-t="distract"><div class="top"><div class="ttl">'+ICON.distract+'Distract</div><span class="plus">+</span></div>'+
+     '<div class="val">'+(s.distractLogged?s.distractN+'<small>'+(s.distractN===1?'time':'times')+'</small>':'—')+'</div><div class="sub">'+(s.distractLogged?'Tap to count another':'Tap when you notice')+'</div></button>';
+  // screen — phone + desktop
+  h+='<button class="card c-screen'+(s.screenLogged?'':' empty')+'" data-act="open-screen"><div class="top"><div class="ttl">'+ICON.screen+'Screen</div><div class="at">'+CHEV+'</div></div>'+
+     '<div class="val">'+(s.screenLogged?fmtMins(s.screenMin):'—')+'</div><div class="sub">'+(s.screenLogged?((s.screenPhone?fmtMins(s.screenPhone)+' phone':'')+(s.screenPhone&&s.screenDesk?' · ':'')+(s.screenDesk?fmtMins(s.screenDesk)+' desktop':'')):'Phone or desktop, in minutes')+'</div></button>';
+  h+='</div>';
+  // the day's log
+  var ev=S.events.filter(function(e){return e.logDay===k}).sort(function(a,b){return a.ts<b.ts?-1:1});
+  h+='<div class="sec">'+(isToday?'Today':DN[yd.getDay()])+'’s log<span>'+ev.length+' '+(ev.length===1?'entry':'entries')+'</span></div><div class="list">';
+  if(!ev.length)h+='<div class="empty">Nothing logged '+(isToday?'yet today':'that day')+'</div>';
+  for(var i=0;i<ev.length;i++){var e=ev[i],d=new Date(e.tracker==='sleep'?e.value2:e.ts),nm='',sub='';
+    if(e.tracker==='sleep'){nm='Woke up';sub='Fell asleep '+fmtTime(new Date(e.value))+' · '+fmtDur(hrs(new Date(e.value2)-new Date(e.value)))}
+    else if(e.tracker==='food'){nm=e.value2==='snack'?'Snack':'Meal';sub=esc(e.note)}
+    else if(e.tracker==='meds'){nm=esc(cap(medName(e)))}
+    else if(e.tracker==='distract'){nm='Distracted'}
+    else if(e.tracker==='screen'){nm='Screen · +'+fmtMins(+e.value);sub=(e.value2==='desktop'?'Desktop':'Phone')+(e.note?' · '+esc(e.note):'')}
+    h+='<button class="row c-'+e.tracker+'" data-act="edit-event" data-id="'+esc(e.id)+'"><i class="dot"></i><span class="n">'+nm+(sub?'<small>'+sub+'</small>':'')+'</span><span class="t">'+fmtTime(d)+'</span>'+CHEV+'</button>'}
+  h+='</div>';
+  return h;
+}
+
+/* ── SHEET (the forms) ── */
+var sheetKey=null;
+function formKey(){if(!S.form)return null;if(typeof S.form==='string')return S.form;if(S.form.sleep)return 'sleep:'+S.form.sleep;if(S.form.edit)return 'edit:'+S.form.edit;return 'x'}
+function renderSheet(){
+  var bd=document.getElementById('backdrop'),sh=document.getElementById('sheet'),key=formKey();
+  if(!key){sheetKey=null;bd.className='backdrop';sh.className='sheet';document.body.classList.remove('sheet-open');
+    setTimeout(function(){if(!S.form)sh.innerHTML=''},350);return}
+  var html='';
+  if(S.form.sleep)html=renderSleepForm(S.form.sleep);else if(S.form==='meds')html=renderMedsForm();else if(S.form==='food')html=renderFoodForm();
+  else if(S.form==='screen')html=renderScreenForm();else if(S.form.edit)html=renderEditForm(S.form.edit);
+  if(!html){S.form=null;S.formVals=null;renderSheet();return}
+  sh.innerHTML='<div class="grab"></div>'+html;
+  document.body.classList.add('sheet-open');
+  var fresh=key!==sheetKey;sheetKey=key;
+  // the frame callback re-checks state: a sheet opened and closed within one frame must stay closed
+  if(fresh){bd.className='backdrop';sh.className='sheet';void sh.offsetHeight;requestAnimationFrame(function(){if(S.form&&sheetKey===key){bd.className='backdrop in';sh.className='sheet in'}})}
+  else{bd.className='backdrop in';sh.className='sheet in'}
+  // focus: the list-editor box always; other .af inputs only on a pointer device (a popped keyboard hides the chips)
+  var f=sh.querySelector('.af');if(f&&(f.id==='l-new'||(fresh&&!matchMedia('(pointer:coarse)').matches))){try{f.focus()}catch(e){}}
+}
+function sheetHead(title,sub,t){return '<div class="sh c-'+t+'"><div><h2>'+ICON[t]+title+'</h2>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div><button class="x" data-act="close-form" aria-label="Close">'+XICON+'</button></div>'}
+function kindSeg(act,opts,cur){return '<div class="seg kind">'+opts.map(function(o){return '<button class="'+(o[0]===cur?'on':'')+'" data-act="'+act+'" data-v="'+esc(o[0])+'">'+o[1]+'</button>'}).join('')+'</div>'}
+function dayLabel(dk){var tk=todayKey(),d=parseYmd(dk);return (dk===tk?'Today':'Yesterday')+' · '+DNS[d.getDay()]+', '+MNS[d.getMonth()]+' '+d.getDate()}
+// The sleep form logs to the day the master toggle is on (the day you woke into).
+function renderSleepForm(dk){
+  var s=dayStats(dk),now=new Date(),tk=todayKey(),fv=S.formVals||{};
+  var onset=fv.onset!==undefined?fv.onset:(s.sleep?hhmm(s.sleep.onset):'');
+  var wake=fv.wake!==undefined?fv.wake:(s.sleep?hhmm(s.sleep.wake):(dk===tk?hhmm(now):''));
+  var calc='';if(onset&&wake){var w=clockOnDay(dk,wake),o=clockOnDay(dk,onset);if(o>=w)o.setDate(o.getDate()-1);calc='<b>'+fmtDur(hrs(w-o))+'</b> · asleep '+DNS[o.getDay()]+' '+fmtTime(o)+' → woke '+DNS[w.getDay()]+' '+fmtTime(w)}
+  var h=sheetHead(s.sleep?'Edit Sleep':'Log Sleep','Woke '+dayLabel(dk).replace(/^Today/,'today').replace(/^Yesterday/,'yesterday'),'sleep');
+  h+='<div class="grp"><div class="fr"><label>Fell asleep</label><input type="time" class="af" id="f-onset" value="'+onset+'"></div><div class="fr"><label>Woke up</label><input type="time" id="f-wake" value="'+wake+'"></div></div>';
+  h+='<div class="calc" id="f-calc">'+calc+'</div>';
+  h+='<div class="acts"><button class="btn" data-act="save-sleep" data-day="'+dk+'">'+(s.sleep?'Save':'Log Sleep')+'</button>'+(s.sleep?'<button class="btn danger" data-act="del-event" data-id="'+esc(s.sleep.id)+'">Delete</button>':'')+'</div>';
+  return h;
+}
+// The "+" chip at the end of a list flips the sheet into manage mode: chips grow an × and an
+// add box appears. Nothing in manage mode logs an event — it only edits the chip list.
+function manageBits(kind,fv,tip){
+  var h='<button class="chip add" data-act="list-manage" title="Edit this list">'+(fv.manage?'Done':'+')+'</button></div>';
+  if(fv.manage)h+='<div class="mg"><input type="text" class="af" id="l-new" placeholder="'+(kind==='meds'?'New med, e.g. magnesium':'New food, e.g. tacos')+'" autocapitalize="off"><button class="btn tint" data-act="list-add" data-kind="'+kind+'">Add</button></div><div class="tip">Tap × to remove a chip. '+tip+'</div>';
+  return h;
+}
+// Meds: one chip per med. Tap = logged at the "When" time (defaults to now). A logged chip shows a
+// check and its time; tap it to edit or delete. Meds taken today but no longer in the list still show.
+function renderMedsForm(){
+  var k=activeDay(),s=dayStats(k),fv=S.formVals||{},h=sheetHead('Meds',dayLabel(k),'meds')+'<div class="c-meds">';
+  if(!fv.manage)h+='<div class="grp"><div class="fr"><label>When</label><input type="time" id="f-time" value="'+(fv.time||hhmm(new Date()))+'"></div></div><div class="tip">Tap a med to log it at this time. Tap a logged one to edit it.</div>';
+  h+='<div class="chips">';var shown={};
+  S.lists.meds.forEach(function(m){var e=s.medsBy[m];shown[m]=1;
+    if(fv.manage)h+='<button class="chip rm" data-act="list-rm" data-kind="meds" data-v="'+esc(m)+'">'+esc(cap(m))+'<span class="x">×</span></button>';
+    else if(e)h+='<button class="chip on" data-act="edit-event" data-id="'+esc(e.id)+'">✓ '+esc(cap(m))+'<small>'+fmtTimeShort(new Date(e.ts))+'</small></button>';
+    else h+='<button class="chip'+(m===PRIMARY_MED?' first':'')+'" data-act="med-take" data-v="'+esc(m)+'">'+esc(cap(m))+'</button>'});
+  if(!fv.manage)Object.keys(s.medsBy).forEach(function(m){if(shown[m])return;var e=s.medsBy[m];h+='<button class="chip on" data-act="edit-event" data-id="'+esc(e.id)+'">✓ '+esc(cap(m))+'<small>'+fmtTimeShort(new Date(e.ts))+'</small></button>'});
+  h+=manageBits('meds',fv,esc(cap(PRIMARY_MED))+' is the one the charts track.');
+  h+='<div class="acts"><button class="btn tint" data-act="close-form">Done</button></div></div>';
+  return h;
+}
+// Food: meal or snack, tap any number of chips (they build the "What" line — tap again to remove), fix the time, log.
+function renderFoodForm(){
+  var k=activeDay(),fv=S.formVals||{},kind=fv.kind||'meal';
+  var sel=(fv.note||'').split(',').map(function(x){return x.trim().toLowerCase()}).filter(Boolean);
+  var h=sheetHead('Log Food',dayLabel(k),'food')+'<div class="c-food">'+kindSeg('food-kind',[['meal','Meal'],['snack','Snack · ⅓']],kind);
+  h+='<div class="chips">';
+  S.lists.food.forEach(function(f){
+    if(fv.manage)h+='<button class="chip rm" data-act="list-rm" data-kind="food" data-v="'+esc(f)+'">'+esc(f)+'<span class="x">×</span></button>';
+    else h+='<button class="chip'+(sel.indexOf(f)>=0?' on':'')+'" data-act="food-chip" data-v="'+esc(f)+'">'+esc(f)+'</button>'});
+  h+=manageBits('food',fv,'Adding a chip never logs anything.');
+  h+='<div class="grp"><div class="fr"><input type="text" id="f-note" placeholder="What did you eat?" value="'+esc(fv.note||'')+'"></div><div class="fr"><label>When</label><input type="time" id="f-time" value="'+(fv.time||hhmm(new Date()))+'"></div></div>';
+  h+='<div class="acts"><button class="btn" data-act="save-food" data-kind="'+kind+'">Log '+cap(kind)+'</button></div></div>';
+  return h;
+}
+function renderScreenForm(){
+  var k=activeDay(),fv=S.formVals||{},dev=fv.dev||'phone';
+  var h=sheetHead('Screen Time',dayLabel(k),'screen')+'<div class="c-screen">'+kindSeg('screen-dev',[['phone','Phone'],['desktop','Desktop']],dev);
+  h+='<div class="chips">'+SCREEN_CHIPS.map(function(m){return '<button class="chip" data-act="screen-chip" data-v="'+m+'">+'+fmtMins(m)+'</button>'}).join('')+'</div>';
+  h+='<div class="grp"><div class="fr"><label>Minutes</label><input type="number" id="f-min" inputmode="numeric" placeholder="0" value="'+esc(fv.min||'')+'"></div><div class="fr"><input type="text" id="f-note" placeholder="App or what for (optional)" value="'+esc(fv.note||'')+'"></div><div class="fr"><label>When</label><input type="time" id="f-time" value="'+(fv.time||hhmm(new Date()))+'"></div></div>';
+  h+='<div class="acts"><button class="btn" data-act="save-screen" data-dev="'+dev+'">Add '+cap(dev)+'</button></div></div>';
+  return h;
+}
+function renderEditForm(id){
+  var e=findEv(id);if(!e)return'';var t=e.tracker;
+  var ek=(S.formVals&&S.formVals.kind)||(t==='meds'?medName(e):e.value2)||'';
+  var title=t==='food'?'Edit '+(ek==='snack'?'Snack':'Meal'):t==='meds'?'Edit Med':t==='screen'?'Edit Screen Time':t==='distract'?'Edit Distraction':'Edit';
+  var h=sheetHead(title,fmtDayLong(e.logDay),t)+'<div class="c-'+t+'">';
+  if(t==='food')h+=kindSeg('edit-kind',[['meal','Meal'],['snack','Snack · ⅓']],ek||'meal');
+  if(t==='screen')h+=kindSeg('edit-kind',[['phone','Phone'],['desktop','Desktop']],ek||'phone');
+  if(t==='meds'){var ml=S.lists.meds.slice();if(ml.indexOf(ek)<0)ml.push(ek);h+='<div class="chips">'+ml.map(function(m){return '<button class="chip'+(m===ek?' on':'')+'" data-act="edit-kind" data-v="'+esc(m)+'">'+esc(cap(m))+'</button>'}).join('')+'</div>'}
+  h+='<div class="grp">';
+  if(t==='food')h+='<div class="fr"><input type="text" id="e-note" placeholder="What did you eat?" value="'+esc(e.note)+'"></div>';
+  if(t==='screen')h+='<div class="fr"><label>Minutes</label><input type="number" id="e-val" inputmode="numeric" value="'+esc(e.value)+'"></div><div class="fr"><input type="text" id="e-note" placeholder="App or what for (optional)" value="'+esc(e.note)+'"></div>';
+  if(t==='distract')h+='<div class="fr"><label>Count</label><input type="number" id="e-val" inputmode="numeric" value="'+esc(e.value||1)+'"></div>';
+  h+='<div class="fr"><label>Time</label><input type="time" class="af" id="e-time" value="'+hhmm(new Date(e.ts))+'"></div></div>';
+  h+='<div class="acts"><button class="btn" data-act="save-edit" data-id="'+esc(e.id)+'">Save</button><button class="btn danger" data-act="del-event" data-id="'+esc(e.id)+'">Delete</button></div></div>';
+  return h;
+}
+// "Vitamin D 4×, Iron 2×" — how often each non-primary med shows up across a set of days.
+function medCounts(stats){var c={};stats.forEach(function(s){s.medsOthers.forEach(function(n){c[n]=(c[n]||0)+1})});
+  return Object.keys(c).sort(function(a,b){return c[b]-c[a]}).map(function(n){return esc(cap(n))+' '+c[n]+'×'}).join(', ')}
+
+/* ── WEEK / MONTH — one card per tracker: headline, trend, chart ── */
+function trendPill(t){
+  var tr=trend(metricFor(t)),j=judge(t,tr.diff);
+  if(tr.diff===null)return '<span class="pill" title="Needs two weeks of data">Needs 2 wks</span>';
+  var ad=Math.abs(tr.diff),txt;
+  if(j==='flat')txt='Same as last wk';
+  else if(t==='sleep')txt=Math.round(ad)+'m '+(tr.diff<0?'earlier':'later');
+  else if(t==='meds')txt=Math.round(tr.now*100)+'% · was '+Math.round(tr.prev*100)+'%';
+  else if(t==='screen')txt=fmtMins(ad)+' '+(tr.diff<0?'less':'more')+'/day';
+  else txt=(Math.round(ad*10)/10)+' '+(tr.diff<0?'fewer':'more')+'/day';
+  return '<span class="pill '+j+'" title="This week vs last">'+(j==='up'?'▲ ':j==='dn'?'▼ ':'')+txt+'</span>';
+}
+function statCard(t,big,sub,chart,legend){
+  return '<div class="stat c-'+t+'"><div class="top"><div class="ttl">'+ICON[t]+T[t].label+'</div>'+trendPill(t)+'</div><div class="big">'+big+'</div><div class="sub">'+sub+'</div>'+chart+(legend||'')+'</div>';
+}
+function renderStats(n){
+  var days=dayList(n),tk=todayKey(),stats=days.map(dayStats),W=chartWidth(),H=n===7?150:140,todayIdx=days.indexOf(tk),h='';
+  var labels=days.map(function(k,i){var d=parseYmd(k);return n===7?DNS[d.getDay()][0]:((i%5===0||i===n-1)?(d.getDate()===1?MNS[d.getMonth()]:''+d.getDate()):'')});
+  var any=stats.map(function(s){return !s.any});
+  // SLEEP — bars from fell-asleep to woke on a downward time axis; target line at the wake goal
+  var spans=stats.map(function(s){if(!s.sleep)return null;var a=s.sleep.onsetMin,b=s.sleep.wakeMin;if(a>b)a-=1440;return {a:a,b:b}});
+  var lo=[],hi=[];spans.forEach(function(sp){if(sp){lo.push(sp.a);hi.push(sp.b)}});
+  var tg=WAKE_TARGET_MIN-DAY_START_MIN,yMin=lo.length?Math.floor((Math.min.apply(null,lo)-60)/60)*60:tg-600,yMax=hi.length?Math.ceil((Math.max.apply(null,hi)+60)/60)*60:tg+180;
+  if(tg<yMin)yMin=tg-60;if(tg>yMax)yMax=tg+60;
+  var slept=stats.filter(function(s){return s.sleep}),aw=avg(slept.map(function(s){return s.sleep.wakeMin})),ad=avg(slept.map(function(s){return s.sleep.dur}));
+  var ssub=slept.length?fmtDur(ad)+' avg · '+slept.length+' of '+n+' nights · target '+fmtMinLong(tg)+(aw>tg?' · '+fmtDur((aw-tg)/60)+' to go':' · on target'):'No sleep logged';
+  h+=statCard('sleep',(aw===null?'—':fmtMinLong(aw))+'<small>avg wake</small>',ssub,spanChart({w:W,h:H+20,spans:spans,yMin:yMin,yMax:yMax,ref:tg,labels:labels,todayIdx:todayIdx}),
+    '<div class="legend"><span><i style="background:var(--sleep)"></i>asleep → awake</span><span><i class="dash"></i>target</span></div>');
+  // MEDS — dot at the time the primary med was taken; hollow red = logged day, not taken
+  var mt=stats.map(function(s){return s.medsTime?minSinceStart(s.medsTime):null}),missed=stats.map(function(s){return s.any&&!s.medsTaken}),mm=mt.filter(function(x){return x!==null});
+  var taken=stats.filter(function(s){return s.medsTaken}).length,loggedDays=stats.filter(function(s){return s.any}).length;
+  var msubs=[];if(mm.length)msubs.push('usually around '+fmtMinLong(avg(mm)));var oc=medCounts(stats);if(oc)msubs.push(oc);
+  var myMin=mm.length?Math.max(0,Math.floor((Math.min.apply(null,mm)-90)/60)*60):480,myMax=mm.length?Math.min(1440,Math.ceil((Math.max.apply(null,mm)+90)/60)*60):1080;if(myMax-myMin<240)myMax=myMin+240;
+  h+=statCard('meds',taken+' of '+loggedDays+'<small>'+esc(cap(PRIMARY_MED))+' · logged days</small>',msubs.join(' · ')||'Nothing logged',scatterChart({w:W,h:H-20,vals:mt,missed:missed,yMin:myMin,yMax:myMax,labels:labels,todayIdx:todayIdx}),
+    '<div class="legend"><span><i style="background:var(--meds);border-radius:50%"></i>taken</span><span><i style="border:1.5px solid var(--bad);border-radius:50%;width:6px;height:6px"></i>missed</span></div>');
+  // FOOD — meals stacked with snacks (⅓ each)
+  var fm=stats.map(function(s){return s.any?s.meals:0}),fs=stats.map(function(s){return s.any?Math.round(s.snacks/3*10)/10:0}),af=avg(stats.filter(function(s){return s.any}).map(function(s){return s.foodScore}));
+  var tm=stats.reduce(function(a,s){return a+s.meals},0),tsn=stats.reduce(function(a,s){return a+s.snacks},0),ff=stats.filter(function(s){return s.firstFood});
+  h+=statCard('food',(af===null?'—':Math.round(af*10)/10)+'<small>meals / day</small>',af===null?'No food logged':tm+' meals + '+tsn+' snacks'+(ff.length?' · first bite ~'+fmtMinOfDay(avg(ff.map(function(s){return minSinceStart(s.firstFood)}))):''),
+    barsChart({w:W,h:H-20,vals:fm,vals2:fs,labels:labels,missing:any,max:Math.max(3,Math.max.apply(null,fm.map(function(v,i){return v+fs[i]}))),avg:af,todayIdx:todayIdx}),
+    '<div class="legend"><span><i style="background:var(--food)"></i>meals</span><span><i style="background:var(--food);opacity:.4"></i>snacks · ⅓ each</span><span><i class="dash"></i>avg</span></div>');
+  // DISTRACT
+  var dv=stats.map(function(s){return s.any?s.distractN:0}),ad2=avg(stats.filter(function(s){return s.any}).map(function(s){return s.distractN})),dt=dv.reduce(function(a,b){return a+b},0);
+  h+=statCard('distract',(ad2===null?'—':Math.round(ad2*10)/10)+'<small>/ day</small>',ad2===null?'Nothing counted':dt+' total',barsChart({w:W,h:H-20,vals:dv,labels:labels,missing:any,avg:ad2,todayIdx:todayIdx}));
+  // SCREEN — phone stacked with desktop
+  var sp2=stats.map(function(s){return s.screenLogged?s.screenPhone:0}),sd=stats.map(function(s){return s.screenLogged?s.screenDesk:0}),sm=stats.map(function(s){return !s.screenLogged});
+  var ss=stats.filter(function(s){return s.screenLogged}),as=avg(ss.map(function(s){return s.screenMin})),tp=ss.reduce(function(a,s){return a+s.screenPhone},0),tt=ss.reduce(function(a,s){return a+s.screenMin},0);
+  h+=statCard('screen',(as===null?'—':fmtMins(as))+'<small>/ day</small>',as===null?'No screen time logged':Math.round(tp/tt*100)+'% phone · '+Math.round((tt-tp)/tt*100)+'% desktop',
+    barsChart({w:W,h:H-20,vals:sp2,vals2:sd,labels:labels,missing:sm,yFmt:function(v){return fmtMins(v)},avg:as,todayIdx:todayIdx}),
+    '<div class="legend"><span><i style="background:var(--screen)"></i>phone</span><span><i style="background:var(--screen);opacity:.4"></i>desktop</span><span><i class="dash"></i>avg</span></div>');
+  return h;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIONS
+   ═══════════════════════════════════════════════════════════ */
+var toastT=null;
+function toast(msg,color,undo){
+  var t=document.getElementById('toast');clearTimeout(toastT);
+  t.style.setProperty('--c',color||'var(--blue)');t.className='toast show'+(color==='err'?' err':'');
+  t.innerHTML='<i></i><span>'+msg+'</span>'+(undo?'<button class="u" data-act="undo">Undo</button>':'');
+  toastT=setTimeout(function(){t.className='toast'},undo?5000:2600);
+}
+function newId(){return 'e'+Date.now()+Math.floor(Math.random()*1000)}
+async function addEvent(e,label,color){
+  S.events.push(e);undoStack.push({type:'add',id:e.id});render();
+  toast(label,color,true);
+  var r=await API.add(e);if(r&&r.error)toast('Save failed: '+r.error,'err');
+}
+async function updateEvent(e){var r=await API.update(e);if(r&&r.error)toast('Save failed: '+r.error,'err')}
+async function removeEvent(id){
+  S.events=S.events.filter(function(e){return e.id!==id});render();
+  var r=await API.del(id);if(r&&r.error)toast('Delete failed: '+r.error,'err');
+}
+function findEv(id){for(var i=0;i<S.events.length;i++)if(S.events[i].id===id)return S.events[i];return null}
+// Whatever is typed in the open form right now, so a re-render (chip tap, manage toggle) doesn't lose it.
+function captureForm(){var o={},n=document.getElementById('f-note'),t=document.getElementById('f-time'),m=document.getElementById('f-min');
+  if(n)o.note=n.value;if(t)o.time=t.value;if(m)o.min=m.value;return o}
+
+document.addEventListener('click',async function(ev){
+  var b=ev.target.closest('[data-act],[data-view],[data-day-set]');if(!b)return;
+  if(b.dataset.view){S.view=b.dataset.view;LS.set('dl_view',S.view);S.form=null;render();return}
+  if(b.dataset.daySet){S.day=b.dataset.daySet;S.form=null;S.formVals=null;render();return}
+  // k = the day we're logging to. "now" = a real timestamp on that day: the current clock time, moved onto
+  // yesterday's log-day if that's what's selected. So a tap always has a sensible, editable time.
+  var a=b.dataset.act,k=activeDay(),now=k===todayKey()?new Date():clockOnDay(k,hhmm(new Date()));
+  if(a==='setup'){S.setup=true;render();return}
+  if(a==='close-setup'){S.setup=false;render();return}
+  if(a==='save-setup'){S.api=document.getElementById('su-api').value.trim();S.key=document.getElementById('su-key').value.trim();
+    if(!S.api){toast('Paste the Apps Script URL','err');return}
+    LS.set('dl_api',S.api);LS.set('dl_key',S.key);LS.del('dl_demo');S.demo=false;S.setup=false;boot();return}
+  if(a==='demo'){LS.set('dl_demo','1');LS.del('dl_demo_events');S.demo=true;S.setup=false;boot();return}
+  if(a==='leave-demo'){LS.del('dl_demo');LS.del('dl_demo_events');S.demo=false;S.events=[];S.setup=true;render();return}
+  if(a==='close-form'){S.form=null;S.formVals=null;render();return}
+  if(a==='open-sleep'){S.form={sleep:k};S.formVals=null;render();return}
+  if(a==='open-meds'){S.form='meds';S.formVals=null;render();return}
+  if(a==='open-food'){S.form='food';S.formVals=null;render();return}
+  if(a==='open-screen'){S.form='screen';S.formVals=null;render();return}
+  if(a==='food-kind'){S.formVals=Object.assign({},S.formVals||{},captureForm(),{kind:b.dataset.v});render();return}
+  if(a==='screen-dev'){S.formVals=Object.assign({},S.formVals||{},captureForm(),{dev:b.dataset.v});render();return}
+  if(a==='edit-kind'){S.formVals=Object.assign({},S.formVals||{},{kind:b.dataset.v});render();return}
+  if(a==='edit-event'){S.form={edit:b.dataset.id};S.formVals=null;render();return}
+  if(a==='log-now'){var t=b.dataset.t;
+    if(t==='distract'){addEvent({id:newId(),ts:now.toISOString(),logDay:k,tracker:'distract',value:1,value2:'',note:''},'Distracted +1',T.distract.color);return}
+  }
+  // meds: a chip tap logs that med at the form's "When" time and keeps the form open for the next one
+  if(a==='med-take'){var cf0=captureForm(),tmm=cf0.time||hhmm(now),md=clockOnDay(k,tmm),mname=b.dataset.v;
+    S.formVals=Object.assign({},S.formVals||{},cf0);
+    addEvent({id:newId(),ts:md.toISOString(),logDay:k,tracker:'meds',value:mname,value2:'',note:''},esc(cap(mname))+' &middot; '+fmtTime(md),T.meds.color);return}
+  // chip lists: "+" toggles manage mode; Add / × edit the list and save it to the Sheet
+  if(a==='list-manage'){var fv0=S.formVals||{};S.formVals=Object.assign({},fv0,captureForm(),{manage:!fv0.manage});render();return}
+  if(a==='list-add'){var inp=document.getElementById('l-new'),nv=(inp&&inp.value||'').toLowerCase().trim(),lk=b.dataset.kind;
+    if(!nv){toast('Type a name first','err');return}
+    if(S.lists[lk].indexOf(nv)<0){S.lists[lk].push(nv);saveLists();toast('Added '+esc(nv),T[lk].color)}else toast('Already in the list','err');
+    S.formVals=Object.assign({},S.formVals||{},captureForm());render();return}
+  if(a==='list-rm'){var lk2=b.dataset.kind,rv=b.dataset.v;
+    if(S.lists[lk2].length<=1){toast('Keep at least one','err');return}
+    S.lists[lk2]=S.lists[lk2].filter(function(x){return x!==rv});saveLists();
+    S.formVals=Object.assign({},S.formVals||{},captureForm());render();return}
+  // food chips build the "What" line: tap to add, tap again to take it back out
+  if(a==='food-chip'){var cf=captureForm(),cur=(cf.note||'').split(',').map(function(x){return x.trim()}).filter(Boolean),item=b.dataset.v,ix=cur.map(function(x){return x.toLowerCase()}).indexOf(item.toLowerCase());
+    if(ix>=0)cur.splice(ix,1);else cur.push(item);S.formVals=Object.assign({},S.formVals||{},cf,{note:cur.join(', ')});render();return}
+  if(a==='screen-chip'){var cf2=captureForm(),cur2=+(cf2.min||0);S.formVals=Object.assign({},S.formVals||{},cf2,{min:cur2+(+b.dataset.v)});render();return}
+  if(a==='save-sleep'){var dk=b.dataset.day||k,o=document.getElementById('f-onset').value,w=document.getElementById('f-wake').value;
+    if(!o||!w){toast('Need both times','err');return}
+    var wd=clockOnDay(dk,w),od=clockOnDay(dk,o);if(od>=wd)od.setDate(od.getDate()-1);
+    var s0=dayStats(dk);
+    if(s0.sleep){var e=findEv(s0.sleep.id);e.value=od.toISOString();e.value2=wd.toISOString();e.ts=wd.toISOString();S.form=null;render();toast('Sleep updated &middot; '+hrs(wd-od)+'h',T.sleep.color);updateEvent(e)}
+    else{S.form=null;addEvent({id:newId(),ts:wd.toISOString(),logDay:dk,tracker:'sleep',value:od.toISOString(),value2:wd.toISOString(),note:''},'Slept '+hrs(wd-od)+'h &middot; woke '+fmtTime(wd),T.sleep.color)}
+    S.formVals=null;return}
+  if(a==='save-food'){var kind=b.dataset.kind||'meal',note=document.getElementById('f-note').value.trim(),tm=document.getElementById('f-time').value||hhmm(now);var d=clockOnDay(k,tm);
+    S.form=null;S.formVals=null;addEvent({id:newId(),ts:d.toISOString(),logDay:k,tracker:'food',value:'',value2:kind,note:note},(kind==='snack'?'Snack':'Meal')+(note?' &middot; '+esc(note):'')+' &middot; '+fmtTime(d),T.food.color);return}
+  if(a==='save-screen'){var dev=b.dataset.dev||'phone',mn=+(document.getElementById('f-min').value||0),tm2=document.getElementById('f-time').value||hhmm(now),sn=(document.getElementById('f-note')||{value:''}).value.trim();if(!mn){toast('Enter minutes','err');return}var d2=clockOnDay(k,tm2);
+    S.form=null;S.formVals=null;addEvent({id:newId(),ts:d2.toISOString(),logDay:k,tracker:'screen',value:mn,value2:dev,note:sn},'Screen +'+fmtMins(mn)+' &middot; '+dev+(sn?' &middot; '+esc(sn):''),T.screen.color);return}
+  if(a==='save-edit'){var e2=findEv(b.dataset.id);if(!e2)return;var tm3=document.getElementById('e-time').value;if(tm3){e2.ts=clockOnDay(e2.logDay,tm3).toISOString()}
+    var nn=document.getElementById('e-note');if(nn)e2.note=nn.value.trim();var vv=document.getElementById('e-val');if(vv)e2.value=+vv.value||0;
+    if(S.formVals&&S.formVals.kind){if(e2.tracker==='food'||e2.tracker==='screen')e2.value2=S.formVals.kind;else if(e2.tracker==='meds')e2.value=S.formVals.kind}
+    if(e2.tracker==='meds')e2.value=medName(e2);   // old "taken" rows get a real name on their first edit
+    S.form=null;S.formVals=null;render();toast('Updated',T[e2.tracker].color);updateEvent(e2);return}
+  if(a==='del-event'){S.form=null;removeEvent(b.dataset.id);toast('Deleted','var(--sec)');return}
+  if(a==='undo'){var u=undoStack.pop();if(u&&u.type==='add'){removeEvent(u.id);toast('Undone','var(--sec)')}return}
+});
+// Enter in the "new chip" box = Add; Escape closes whatever sheet is open
+document.addEventListener('keydown',function(ev){
+  if(ev.key==='Enter'&&ev.target.id==='l-new'){ev.preventDefault();var bt=document.querySelector('[data-act="list-add"]');if(bt)bt.click()}
+  if(ev.key==='Escape'&&S.form){S.form=null;S.formVals=null;render()}
+});
+// charts are drawn at the card's pixel width, so redraw when that changes
+var rzT=null;window.addEventListener('resize',function(){clearTimeout(rzT);rzT=setTimeout(function(){if(S.view!=='day'&&!S.form&&!S.loading)render()},150)});
+// live duration calc in the sleep form
+document.addEventListener('input',function(ev){
+  if(ev.target.id==='f-onset'||ev.target.id==='f-wake'){var o=document.getElementById('f-onset').value,w=document.getElementById('f-wake').value,c=document.getElementById('f-calc');
+    if(o&&w){var k=(S.form&&S.form.sleep)||todayKey(),wd=clockOnDay(k,w),od=clockOnDay(k,o);if(od>=wd)od.setDate(od.getDate()-1);c.innerHTML='<b>'+fmtDur(hrs(wd-od))+'</b> &middot; asleep '+DNS[od.getDay()]+' '+fmtTime(od)+' &rarr; woke '+DNS[wd.getDay()]+' '+fmtTime(wd)}else c.innerHTML=''}
+});
+
+/* ═══════════════════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════════════════ */
+async function boot(){
+  S.loading=true;render();
+  if(!S.api&&!S.demo){S.loading=false;render();return}
+  var r=await API.load(35);
+  S.loading=false;
+  if(r&&r.error){toast(r.error,'err');S.events=[]}else{S.events=(r.events||[]).map(function(e){return {id:String(e.id),ts:String(e.ts),logDay:String(e.logDay),tracker:String(e.tracker),value:e.value,value2:e.value2||'',note:e.note||''}});
+    // the Sheet's Lists tab wins over this browser's copy, so phone and desktop show the same chips
+    if(r.lists){S.lists=normLists(r.lists);LS.set('dl_lists',JSON.stringify(S.lists))}}
+  render();
+}
+boot();
+// re-render the header clock each minute so "Still Friday" flips at 2:30 without a reload.
+// When the log-day rolls over, snap the day toggle back to Today so "yesterday" can't silently re-point.
+var lastDayKey=todayKey();
+setInterval(function(){var tk=todayKey();if(tk!==lastDayKey){lastDayKey=tk;S.day='today';S.form=null}if(!S.form)render()},60000);
+</script>
+</body>
+</html>
+
