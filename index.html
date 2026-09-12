@@ -259,7 +259,6 @@ var S = {
   form: null,            // which inline form is open: {sleep:dayKey}|'meds'|'food'|'screen'|{edit:id}|null
   setup: false,
   api: LS.get('dl_api') || 'https://script.google.com/macros/s/AKfycbxuLFWpdobvLnsWekE1a6uuEX3fLypWULcENrEinYdr2vgk5GQLQ_WYRJ6FQ2_SYUERyA/exec',
-  key: LS.get('dl_key') || 'change-me-to-something-long',
   demo: LS.get('dl_demo') === '1',
   lists: loadLists()     // {meds:[...], food:[...]} — chip lists, editable from the "+" chip in each form
 };
@@ -321,7 +320,7 @@ function jsonp(params){
     var t=setTimeout(function(){if(done)return;done=true;delete window[cb];sc.remove();res({error:'Timeout — Apps Script may be cold-starting. Try again.'})},28000);
     window[cb]=function(d){if(done)return;done=true;clearTimeout(t);delete window[cb];sc.remove();res(d)};
     sc.onerror=function(){if(done)return;done=true;clearTimeout(t);delete window[cb];sc.remove();res({error:'Network error'})};
-    sc.src=S.api+'?'+params+'&key='+encodeURIComponent(S.key)+'&callback='+cb;
+    sc.src=S.api+'?'+params+'&callback='+cb;
     document.body.appendChild(sc);
   });
 }
@@ -518,9 +517,8 @@ function renderSetup(){
   if(first){
     h+='<h2>Nothing here yet</h2><p>Daylog keeps everything in a Google Sheet you own. See it working right now with demo data, or connect a Sheet — ten minutes, steps in the README.</p>';
     h+='<button class="btn" data-act="demo">See It With Demo Data</button><div class="sec" style="margin-top:24px">Or connect your Sheet</div>';
-  } else h+='<h2>Settings</h2><p>The Apps Script URL is built into this page. The key stays in this browser only.</p>';
-  h+='<div class="grp"><div class="fr"><input type="text" id="su-api" placeholder="Apps Script URL (…/exec)" value="'+esc(S.api)+'" autocapitalize="off" autocorrect="off"></div>'+
-     '<div class="fr"><input type="text" id="su-key" placeholder="Key (SECRET_KEY from Code.gs)" value="'+esc(S.key)+'" autocapitalize="off" autocorrect="off"></div></div>';
+  } else h+='<h2>Settings</h2><p>The Apps Script URL is built into this page. No key is required.</p>';
+  h+='<div class="grp"><div class="fr"><input type="text" id="su-api" placeholder="Apps Script URL (…/exec)" value="'+esc(S.api)+'" autocapitalize="off" autocorrect="off"></div></div>';
   h+='<div class="acts"><button class="btn'+(first?' tint':'')+'" data-act="save-setup">Connect</button>'+
      (first?'':'<button class="btn tint" data-act="demo">'+(S.demo?'Reset Demo Data':'Switch to Demo Data')+'</button><button class="btn tint" data-act="close-setup">Cancel</button>')+
      (S.demo?'<button class="btn danger" data-act="leave-demo">Leave Demo</button>':'')+'</div>';
@@ -761,9 +759,9 @@ document.addEventListener('click',async function(ev){
   var a=b.dataset.act,k=activeDay(),now=k===todayKey()?new Date():clockOnDay(k,hhmm(new Date()));
   if(a==='setup'){S.setup=true;render();return}
   if(a==='close-setup'){S.setup=false;render();return}
-  if(a==='save-setup'){S.api=document.getElementById('su-api').value.trim();S.key=document.getElementById('su-key').value.trim();
+  if(a==='save-setup'){S.api=document.getElementById('su-api').value.trim();
     if(!S.api){toast('Paste the Apps Script URL','err');return}
-    LS.set('dl_api',S.api);LS.set('dl_key',S.key);LS.del('dl_demo');S.demo=false;S.setup=false;boot();return}
+    LS.set('dl_api',S.api);LS.del('dl_key');LS.del('dl_demo');S.demo=false;S.setup=false;boot();return}
   if(a==='demo'){LS.set('dl_demo','1');LS.del('dl_demo_events');S.demo=true;S.setup=false;boot();return}
   if(a==='leave-demo'){LS.del('dl_demo');LS.del('dl_demo_events');S.demo=false;S.events=[];S.setup=true;render();return}
   if(a==='close-form'){S.form=null;S.formVals=null;render();return}
