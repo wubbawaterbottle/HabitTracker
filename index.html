@@ -258,7 +258,7 @@ var S = {
   loading: true,
   form: null,            // which inline form is open: {sleep:dayKey}|'meds'|'food'|'screen'|{edit:id}|null
   setup: false,
-  api: LS.get('dl_api') || '',
+  api: LS.get('dl_api') || 'https://script.google.com/macros/s/AKfycbzJ8QGFvyOdbegEv5_0oaC1od4L4oPWfJn8huBc1khjsSQdWvzyYtSoKqEhOMqsxR0brQ/exec',
   key: LS.get('dl_key') || '',
   demo: LS.get('dl_demo') === '1',
   lists: loadLists()     // {meds:[...], food:[...]} — chip lists, editable from the "+" chip in each form
@@ -518,7 +518,7 @@ function renderSetup(){
   if(first){
     h+='<h2>Nothing here yet</h2><p>Daylog keeps everything in a Google Sheet you own. See it working right now with demo data, or connect a Sheet — ten minutes, steps in the README.</p>';
     h+='<button class="btn" data-act="demo">See It With Demo Data</button><div class="sec" style="margin-top:24px">Or connect your Sheet</div>';
-  } else h+='<h2>Settings</h2><p>The URL and key stay in this browser only — they are never written into the page.</p>';
+  } else h+='<h2>Settings</h2><p>The Apps Script URL is built into this page. The key stays in this browser only.</p>';
   h+='<div class="grp"><div class="fr"><input type="text" id="su-api" placeholder="Apps Script URL (…/exec)" value="'+esc(S.api)+'" autocapitalize="off" autocorrect="off"></div>'+
      '<div class="fr"><input type="text" id="su-key" placeholder="Key (SECRET_KEY from Code.gs)" value="'+esc(S.key)+'" autocapitalize="off" autocorrect="off"></div></div>';
   h+='<div class="acts"><button class="btn'+(first?' tint':'')+'" data-act="save-setup">Connect</button>'+
@@ -849,4 +849,3 @@ setInterval(function(){var tk=todayKey();if(tk!==lastDayKey){lastDayKey=tk;S.day
 </script>
 </body>
 </html>
-
